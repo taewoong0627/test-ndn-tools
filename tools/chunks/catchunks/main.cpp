@@ -53,7 +53,7 @@ main(int argc, char* argv[])
   std::string programName(argv[0]);
 
   Options options;
-  std::string uri, pipelineType("cubic"), cwndPath, rttPath;
+  std::string uri, pipelineType("fixed"), cwndPath, rttPath;
   time::milliseconds::rep minRto(200), maxRto(60000);
   double rtoAlpha(0.125), rtoBeta(0.25);
   int rtoK(8);
