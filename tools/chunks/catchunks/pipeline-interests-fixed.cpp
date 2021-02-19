@@ -124,6 +124,9 @@ PipelineInterestsFixed::handleData(const Interest& interest, const Data& data, s
   if (m_options.isVerbose)
     std::cerr << "Received segment #" << getSegmentFromPacket(data) << std::endl;
 
+  // auto innerData = data.getContent().find(tlv::Data);
+  // std::cout << "Data: " << *innerData << std::endl;
+
   onData(data);
 
   if (!m_hasFinalBlockId && data.getFinalBlock()) {

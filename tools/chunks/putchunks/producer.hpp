@@ -109,6 +109,8 @@ private:
   Face& m_face;
   KeyChain& m_keyChain;
   const Options m_options;
+  
+  time::steady_clock::TimePoint m_startTime;
 };
 
 } // namespace chunks

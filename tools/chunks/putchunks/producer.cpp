@@ -167,11 +167,23 @@ Producer::populateStore(std::istream& is)
     m_store.push_back(data);
   }
 
+  m_startTime = time::steady_clock::now();
+
   auto finalBlockId = name::Component::fromSegment(m_store.size() - 1);
-  for (const auto& data : m_store) {
-    data->setFinalBlock(finalBlockId);
-    m_keyChain.sign(*data, m_options.signingInfo);
+  // for (const auto& data : m_store) {
+  Block nextHash;
+  for (auto it = m_store.rbegin(); it != m_store.rend(); it++) {
+    Data& data = **it;
+    data.setFinalBlock(finalBlockId);
+    m_keyChain.sign(data, nextHash, m_options.signingInfo);
+    // std::cout << "data.content type: " << data.getContent().type() << std::endl;
   }
+  
+  // auto timeElapsed = time::steady_clock::now() - m_startTime;
+  boost::chrono::duration<double, boost::chrono::seconds::period> timeElapsed = time::steady_clock::now() - m_startTime;
+  
+  std::cout << "Time elapsed: " << timeElapsed << std::endl;
+  exit(0);
 
   if (!m_options.isQuiet)
     std::cerr << "Created " << m_store.size() << " chunks for prefix " << m_prefix << std::endl;
