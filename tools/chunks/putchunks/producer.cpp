@@ -31,6 +31,7 @@
 #include "producer.hpp"
 
 #include <ndn-cxx/metadata-object.hpp>
+#include <ndn-cxx/security/signing-helpers.hpp>
 
 namespace ndn {
 namespace chunks {
@@ -175,8 +176,13 @@ Producer::populateStore(std::istream& is)
   for (auto it = m_store.rbegin(); it != m_store.rend(); it++) {
     Data& data = **it;
     data.setFinalBlock(finalBlockId);
-    m_keyChain.sign(data, nextHash, m_options.signingInfo);
+    if (it == m_store.rend() - 1 /* First block */) {
+      m_keyChain.sign(data, nextHash);
+    } else {
+      m_keyChain.sign(data, nextHash, ndn::signingWithSha256());
+    }
     // std::cout << "data.content type: " << data.getContent().type() << std::endl;
+    nextHash = data.getSignatureValue();
   }
   
   // auto timeElapsed = time::steady_clock::now() - m_startTime;
