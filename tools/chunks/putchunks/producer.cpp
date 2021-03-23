@@ -149,7 +149,7 @@ Producer::populateStore(std::istream& is)
   if (!m_options.isQuiet)
     std::cerr << "Loading input ..." << std::endl;
 
-  std::vector<uint8_t> buffer(m_options.maxSegmentSize);
+  std::vector<uint8_t> buffer(m_options.maxSegmentSize - 32);
   while (is.good()) {
     is.read(reinterpret_cast<char*>(buffer.data()), buffer.size());
     const auto nCharsRead = is.gcount();
@@ -183,13 +183,15 @@ Producer::populateStore(std::istream& is)
     }
     // std::cout << "data.content type: " << data.getContent().type() << std::endl;
     nextHash = data.getSignatureValue();
+    std::cout << "next hash size: " << nextHash.value_size() << std::endl;
+    // std::cout << "Real content value size: " << data.getRealContent().size() << std::endl;
+    std::cout << "Content size: " << data.getContent().size() << std::endl;
   }
   
   // auto timeElapsed = time::steady_clock::now() - m_startTime;
   boost::chrono::duration<double, boost::chrono::seconds::period> timeElapsed = time::steady_clock::now() - m_startTime;
   
   std::cout << "Time elapsed: " << timeElapsed << std::endl;
-  exit(0);
 
   if (!m_options.isQuiet)
     std::cerr << "Created " << m_store.size() << " chunks for prefix " << m_prefix << std::endl;

@@ -123,11 +123,26 @@ PipelineInterestsFixed::handleData(const Interest& interest, const Data& data, s
 
   if (m_options.isVerbose)
     std::cerr << "Received segment #" << getSegmentFromPacket(data) << std::endl;
+  
+  auto content = data.getContent();
+  auto realContent = data.getRealContent();
+  
+  std::cerr << "elements size: " << content.elements_size() << std::endl;
+  std::cerr << "value size: " << content.value_size() << std::endl;
+  std::cerr << "Real value size: " << realContent.value_size() << std::endl;
 
-  // auto innerData = data.getContent().find(tlv::Data);
-  // std::cout << "Data: " << *innerData << std::endl;
-
-  onData(data);
+  if (realContent.value_size() == 0) {
+    std::cerr << "Without hash" << std::endl;
+    onData(data);
+  } else {
+    std::cerr << "With hash" << std::endl;
+    // auto newData = make_shared<Data>(data);
+    // newData->setContent(realContent);
+    // onData(*newData);
+    onData(data);
+  }
+  
+  // onData(data);
 
   if (!m_hasFinalBlockId && data.getFinalBlock()) {
     m_lastSegmentNo = data.getFinalBlock()->toSegment();
