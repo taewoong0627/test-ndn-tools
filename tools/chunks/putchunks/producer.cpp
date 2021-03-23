@@ -183,9 +183,6 @@ Producer::populateStore(std::istream& is)
     }
     // std::cout << "data.content type: " << data.getContent().type() << std::endl;
     nextHash = data.getSignatureValue();
-    std::cout << "next hash size: " << nextHash.value_size() << std::endl;
-    // std::cout << "Real content value size: " << data.getRealContent().size() << std::endl;
-    std::cout << "Content size: " << data.getContent().size() << std::endl;
   }
   
   // auto timeElapsed = time::steady_clock::now() - m_startTime;
