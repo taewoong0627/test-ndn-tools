@@ -31,6 +31,7 @@
 #define NDN_TOOLS_CHUNKS_CATCHUNKS_PIPELINE_INTERESTS_FIXED_HPP
 
 #include "pipeline-interests.hpp"
+#include <map>
 
 namespace ndn {
 namespace chunks {
@@ -89,6 +90,10 @@ private:
    * is false, this is usually not a fatal error for the pipeline
    */
   bool m_hasFailure = false;
+
+private:
+  std::map<int, std::shared_ptr<Block>> hash_map;
+  std::map<int, std::shared_ptr<Data>> hash_data;
 };
 
 } // namespace chunks

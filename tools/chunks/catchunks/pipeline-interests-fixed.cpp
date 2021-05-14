@@ -118,21 +118,51 @@ PipelineInterestsFixed::handleData(const Interest& interest, const Data& data, s
   if (isStopping())
     return;
 
-  // Interest was expressed with CanBePrefix=false
   BOOST_ASSERT(data.getName().equals(interest.getName()));
 
   if (m_options.isVerbose)
     std::cerr << "Received segment #" << getSegmentFromPacket(data) << std::endl;
-  
+
+  int segment_no = interest.getName().get(-1).toSegment();
   auto content = data.getContent();
-  auto realContent = data.getRealContent();
+  content.parse();
 
-  auto newData = make_shared<Data>(data);
-  newData->setContent(realContent);
-  onData(*newData);
+  if(hash_data.size() != 0 && hash_data.find(segment_no+1)->second != 0) {
+    auto cData = hash_data.find(segment_no+1)->second;
+    auto m_content = cData->getContent();
+    m_content.parse();
+    auto hash_block = m_content.get(tlv::SignatureValue);
+    if (memcmp((void*)content.get(tlv::SignatureValue).value(), (void*)hash_block.value(), data.getSignatureValue().value_size())) {
+      return onFailure("Failure hash key error");
+    } else {
+      hash_data.erase(segment_no+1);
+      onData(*cData);
+    }
+  } else {
+    for (auto iter = content.elements_begin(); iter != content.elements_end(); iter++) {
+      if(iter->type() == tlv::SignatureValue) {
+        auto signature_block = iter.base();
+        std::shared_ptr<Block> block = std::make_shared<Block>(*signature_block); 
+        hash_map.insert(std::pair<int, std::shared_ptr<Block>>(segment_no, block));
+      }
+    }
+  }
 
-  
-  // onData(data);
+  if(segment_no != 0){
+    auto hash_block = hash_map.find(segment_no-1)->second;
+    if(hash_block == 0) {
+      std::shared_ptr<Data> m_data = std::make_shared<Data>(data); 
+      hash_data.insert(std::pair<int, std::shared_ptr<Data>>(segment_no, m_data));
+    } else if (memcmp((void*)data.getSignatureValue().value(), (void*)hash_block->value(), data.getSignatureValue().value_size())) {
+      return onFailure("Failure hash key error");
+    } else {
+      hash_data.erase(segment_no-1);
+      onData(data);
+    }
+  } else {
+    onData(data);
+  }
+
 
   if (!m_hasFinalBlockId && data.getFinalBlock()) {
     m_lastSegmentNo = data.getFinalBlock()->toSegment();
