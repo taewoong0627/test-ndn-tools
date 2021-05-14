@@ -157,10 +157,16 @@ Producer::populateStore(std::istream& is)
     if (nCharsRead > 0) {
       auto data = make_shared<Data>(Name(m_versionedPrefix).appendSegment(m_store.size()));
       data->setFreshnessPeriod(m_options.freshnessPeriod);
-      data->setContent(buffer.data(), static_cast<size_t>(nCharsRead));
+      Block content(tlv::Content);
+      Block realContent = makeBinaryBlock(tlv::Content, buffer.data(), nCharsRead);
+      content.push_back(realContent);
+      data->setContent(content);
+
+      // data->setContent(buffer.data(), static_cast<size_t>(nCharsRead));
       m_store.push_back(data);
     }
   }
+
 
   if (m_store.empty()) {
     auto data = make_shared<Data>(Name(m_versionedPrefix).appendSegment(0));
@@ -171,21 +177,26 @@ Producer::populateStore(std::istream& is)
   m_startTime = time::steady_clock::now();
 
   auto finalBlockId = name::Component::fromSegment(m_store.size() - 1);
-  // for (const auto& data : m_store) {
-  Block nextHash;
+
+  Block nextHash(tlv::SignatureValue);
   for (auto it = m_store.rbegin(); it != m_store.rend(); it++) {
     Data& data = **it;
-    data.setFinalBlock(finalBlockId);
-    if (it == m_store.rend() - 1 /* First block */) {
-      m_keyChain.sign(data, nextHash);
+    data.setFinalBlock(finalBlockId); 
+
+    auto content = data.getContent();
+    content.push_back(nextHash);
+
+    data.setContent(content);
+
+    if (it == m_store.rend() - 1) {
+      m_keyChain.sign(data);
     } else {
-      m_keyChain.sign(data, nextHash, ndn::signingWithSha256());
+      m_keyChain.sign(data, ndn::signingWithSha256());
     }
-    // std::cout << "data.content type: " << data.getContent().type() << std::endl;
-    nextHash = data.getSignatureValue();
+
+    nextHash = data.getSignatureValue(); //32byte
   }
   
-  // auto timeElapsed = time::steady_clock::now() - m_startTime;
   boost::chrono::duration<double, boost::chrono::seconds::period> timeElapsed = time::steady_clock::now() - m_startTime;
   
   std::cout << "Time elapsed: " << timeElapsed << std::endl;
